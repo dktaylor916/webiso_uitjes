@@ -1,0 +1,350 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Mobiliteit Ruimte in Nederland</title>
+<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+<link href="https://api.mapbox.com/mapbox-gl-js/v2.2.0/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v2.2.0/mapbox-gl.js"></script>
+<script src="https://d3js.org/d3.v4.js"></script>
+<style>
+.tick {opacity: 0;}
+.domain{opacity: 0;}
+body { margin: 0; padding: 0;font-family: Tahoma,sans-serif; }
+#map { position: absolute; top: 0; bottom: 0; width: 100%; z-index: 0; }
+#testbut {position:absolute; z-index: 1}
+.button {position:absolute; z-index: 1;right: 20px;top:20px;background-color: white;font-family: Tahoma, sans-serif;}
+</style>
+</head>
+<body>
+
+<style>
+.legend {
+background-color: #fff;
+border-radius: 3px;
+bottom: 30px;
+box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+font: 12px/20px Tahoma, sans-serif ;
+padding: 10px;
+position: absolute;
+right: 10px;
+z-index: 1;
+}
+ 
+.legend h4 {
+margin: 0 0 10px;
+}
+ 
+.legend div span {
+border-radius: 50%;
+display: inline-block;
+height: 10px;
+margin-right: 5px;
+width: 10px;
+}
+</style>
+<div class='button'><button type="button" name="map_layer" id="gem_but" onclick="gem_but()" >Reset</button>
+
+</div>
+
+<div id="map"></div>
+
+
+
+ 
+<div id="state-legend" class="legend">
+<h4>Network</h4>
+<div><span style="background-color: #c8ddf0"></span>Reference</div>
+<div><span style="background-color: #73b3d8"></span>Model 3</div>
+<div><span style="background-color: #08306b"></span>Model 3 + Fietspedelec</div>
+
+
+</div>
+ 
+</div>
+ 
+<script>
+
+mapboxgl.accessToken = 'pk.eyJ1IjoiZHRheWxvcmdvdWQiLCJhIjoiY2tlbzA1OHltMjJyNjMwcGM2eHZsMGowaiJ9.jtxQ1bgoZL9_sacqiAlTsg';
+var map = new mapboxgl.Map({
+container: 'map',
+style: 'mapbox://styles/mapbox/light-v10',
+center: [5, 52.385],
+minZoom: 7,
+zoom: 8.8
+});
+ 
+var zoomThreshold = 9;
+var hoveredStateId = null;
+map.on('load', function () {
+
+map.addSource('pc4_source', {
+'type': 'geojson',
+'data': 'pc4_cent_mra.geojson'
+});
+
+map.addSource('iso_source', {
+'type': 'geojson',
+'data': 'pc4_iso.geojson'
+});
+
+
+ 
+
+map.addLayer(
+{
+'id': 'iso',
+'source': 'iso_source',
+'type': 'fill',
+'layout':{'fill-sort-key': [
+'case',
+  ['==', ["get","level"], 1.0],
+  3,
+  ['==', ["get","level"], 2.0],
+  2,
+  ['==', ["get","level"], 3.0],
+  1,
+  0]},
+'paint' : {
+'fill-color': [
+'case',
+  ['==', ["get","level"], 1.0],
+  '#c8ddf0',
+  ['==', ["get","level"], 2.0],
+  '#73b3d8',
+  ['==', ["get","level"], 3.0],
+  '#08306b',
+  'black'
+],
+// blue color fill
+'fill-opacity': 0},
+
+
+}
+);
+ 
+map.addLayer(
+{
+'id': 'pc4',
+'source': 'pc4_source',
+'type': 'circle',
+'paint' : {
+'circle-color': 
+'white',
+'circle-stroke-color':'black',
+'circle-stroke-width':1
+},
+'layout':{'visibility':'visible'},
+
+}
+);
+})
+
+map.on('click','pc4',function(e){
+    map.setPaintProperty('pc4','circle-opacity',
+["case",
+        ["==", ["get","id"],e.features[0].properties.id],1,.05
+
+])
+map.setPaintProperty('pc4','circle-stroke-opacity',
+["case",
+        ["==", ["get","id"],e.features[0].properties.id],1,.05
+
+])
+    map.setPaintProperty('iso','fill-opacity',
+["case",
+        ["==", ["get","id"],e.features[0].properties.id],.6,0
+
+])
+    updategem(String(e.features[0].properties.id))
+})
+
+function gem_but(){
+    map.setPaintProperty('pc4','circle-opacity',1)
+map.setPaintProperty('pc4','circle-stroke-opacity',1)
+    map.setPaintProperty('iso','fill-opacity',0)
+    d3.selectAll('rect').remove()
+    d3.selectAll('text').remove()
+
+}
+
+
+
+
+var container = map.getCanvasContainer()
+// set the dimensions and margins of the graph
+var margin = {top: 30, right: 30, bottom: 70, left: 60},
+    width = 500 - margin.left - margin.right,
+    height = 300 - margin.top - margin.bottom;
+
+// append the svg object to the body of the page
+var svg = d3.select(container)
+  .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+	.style('position', 'absolute')
+	.style('z-index',2)
+  .append("g")
+    .attr("transform",
+          "translate(" + margin.left + "," + margin.top + ")");
+
+
+
+// Initialize the X axis
+var getx = d3.scaleLinear()
+    .domain([0, 1500000])
+    .range([ 0, width])
+var xAxis = svg.append("g")
+.attr("transform", "translate(0," + height + ")")
+
+  svg.append("g")
+    .attr("transform", "translate(0," + height + ")")
+    .call(d3.axisBottom(getx))
+    .selectAll("text")
+      .attr("transform", "translate(-10,0)rotate(-45)")
+      .attr('opacity',0)
+      .style("text-anchor", "end")
+   
+
+// Initialize the Y axis
+ var gety = d3.scaleBand()
+    .range([ 0, height ])
+    .padding(.5);
+var yAxis = svg.append("g")
+.attr("class", "myYaxis");
+  svg.append("g")
+    .call(d3.axisLeft(gety))
+
+// A function that create / update the plot for a given variable:
+function updategem(selectedVar) {
+  console.log(selectedVar)
+  // Parse the Data
+  d3.csv("pc4_jobs.csv", function(data) {
+    woo = data.filter(function(d){return d.id == selectedVar})
+    // X axis
+    gety.domain(data.map(function(d) { return d.level; }))
+    yAxis.transition().duration(1000).call(d3.axisLeft(gety))
+
+    // Add Y axis
+
+
+    // variable u: map data to existing bars
+    var u = svg.selectAll("rect")
+      .data(woo)
+    var t = svg.selectAll('.lab').data(woo)
+    var e = svg.selectAll('.name').data(woo)
+    var gname = svg.selectAll('.gname').data(woo)
+
+    // update bars
+    u
+      .enter()
+      .append("rect")
+      .merge(u)
+      .transition()
+      .duration(1000)
+        .attr("y", function(d) { return gety(d.level); })
+        .attr("x", function(d) { return getx(0) })
+        .attr("height", gety.bandwidth())
+        .attr("width", function(d) { return getx(d["jobs"])})
+        .attr("fill", function(d){
+            if(d.level == '1'){
+                return '#c8ddf0'
+            }
+            if(d.level == '2'){
+                return '#73b3d8'
+            }
+            if(d.level == '3'){
+                return '#08306b'
+            }
+			
+            
+        })
+    t
+      .enter()
+      .append("text")
+      .merge(t)
+      .transition()
+      .duration(1000)
+        .attr('class','lab')
+        .attr("y", function(d) { return gety(d.level) +20; })
+        .attr("x", function(d) {
+            if(d["jobs"] < 120000){
+                return getx(d["jobs"] ) + 15
+            }
+            else{
+        return getx(d["jobs"] ) - 20;}
+      })
+        .attr('text-anchor','middle')
+        .attr('fill','white')
+        .attr('font-weight',700)
+        .text(function(d){return ((d3.format(".2s"))(d["jobs"]))})
+        e
+      .enter()
+      .append("text")
+      .merge(e)
+      .transition()
+      .duration(1000)
+        .attr('class','name')
+        .attr("y", 0)
+        .attr("x", 0)
+        .attr('text-anchor','start')
+        .attr('font-size',23)
+        .attr('fill','black')
+        .attr('font-weight',700)
+        
+        .text('Banen binnen 45 min')
+        gname
+      .enter()
+      .append("text")
+      .merge(e)
+      .transition()
+      .duration(1000)
+        .attr('class','name')
+        .attr("y", 50)
+        .attr("x", -5)
+        .attr('text-anchor','end')
+        .attr('font-size',15)
+        .attr('fill','black')
+        .attr('font-weight',300)
+        .text('Ref')
+        gname
+      .enter()
+      .append("text")
+      .merge(e)
+      .transition()
+      .duration(1000)
+        .attr('class','name')
+        .attr("y", 105)
+        .attr("x", -5)
+        .attr('text-anchor','end')
+        .attr('font-size',15)
+        .attr('fill','black')
+        .attr('font-weight',300)
+        .text('Mod 3')
+        gname
+      .enter()
+      .append("text")
+      .merge(e)
+      .transition()
+      .duration(1000)
+        .attr('class','name')
+        .attr("y", 165)
+        .attr("x", -5)
+        .attr('text-anchor','end')
+        .attr('font-size',15)
+        .attr('fill','black')
+        .attr('font-weight',300)
+        .text('FP')
+    d3.selectAll('text').attr('font-family','Tahoma, sans-serif')
+  })
+
+
+}
+// Initialize plot
+
+
+</script>
+ 
+</body>
+</html>
