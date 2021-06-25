@@ -90,13 +90,36 @@ map.addSource('iso_source', {
 });
 
 
+
  
+map.addLayer(
+{
+'id': 'pc4',
+'source': 'pc4_source',
+'type': 'circle',
+'paint' : {
+'circle-color': 
+'white',
+'circle-stroke-color':'black',
+'circle-stroke-width':1
+},
+'layout':{'circle-sort-key': 0},
+
+}
+);
+})
+
+map.on('click','pc4',function(e){
+    map.removeLayer('iso')
+    map.removeLayer('pc4')
 
 map.addLayer(
 {
+
 'id': 'iso',
 'source': 'iso_source',
 'type': 'fill',
+'filter': ["==","id",e.features[0].properties.id],
 'layout':{'fill-sort-key': [
 'case',
   ['==', ["get","level"], 1.0],
@@ -118,12 +141,13 @@ map.addLayer(
   'black'
 ],
 // blue color fill
-'fill-opacity': 0},
+'fill-opacity': .7},
 
 
 }
 );
- 
+
+
 map.addLayer(
 {
 'id': 'pc4',
@@ -135,14 +159,12 @@ map.addLayer(
 'circle-stroke-color':'black',
 'circle-stroke-width':1
 },
-'layout':{'visibility':'visible'},
+
 
 }
-);
-})
 
-map.on('click','pc4',function(e){
-    map.setPaintProperty('pc4','circle-opacity',
+);
+map.setPaintProperty('pc4','circle-opacity',
 ["case",
         ["==", ["get","id"],e.features[0].properties.id],1,.05
 
@@ -152,18 +174,13 @@ map.setPaintProperty('pc4','circle-stroke-opacity',
         ["==", ["get","id"],e.features[0].properties.id],1,.05
 
 ])
-    map.setPaintProperty('iso','fill-opacity',
-["case",
-        ["==", ["get","id"],e.features[0].properties.id],.6,0
-
-])
     updategem(String(e.features[0].properties.id))
 })
 
 function gem_but(){
     map.setPaintProperty('pc4','circle-opacity',1)
 map.setPaintProperty('pc4','circle-stroke-opacity',1)
-    map.setPaintProperty('iso','fill-opacity',0)
+    map.removeLayer('iso')
     d3.selectAll('rect').remove()
     d3.selectAll('text').remove()
 
