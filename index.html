@@ -12,14 +12,31 @@
 .tick {opacity: 0;}
 .domain{opacity: 0;}
 body { margin: 0; padding: 0;font-family: Tahoma,sans-serif; }
-#map { position: absolute; top: 0; bottom: 0; width: 100%; z-index: 0; }
+#map { position: absolute; top: 0; bottom: 0; width: 100%; z-index: 0;cursor: pointer; }
 #testbut {position:absolute; z-index: 1}
 .button {position:absolute; z-index: 1;right: 20px;top:20px;background-color: white;font-family: Tahoma, sans-serif;}
+.button1 {position:absolute; z-index: 1;;left: 20px;bottom:30px;background-color: white;font-family: Tahoma, sans-serif;}
 </style>
 </head>
 <body>
 
 <style>
+#des{
+background-color: #fff;
+border-radius: 3px;
+box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+font: Tahoma, sans-serif ;
+padding: 10px;
+position: relative;
+top: 200px;
+
+opacity: 90%;
+
+z-index: 2;
+
+width:700px; margin-left:auto; margin-right:auto; border:1px solid #ddd; padding:10px;
+
+}
 .legend {
 background-color: #fff;
 border-radius: 3px;
@@ -43,8 +60,27 @@ height: 10px;
 margin-right: 5px;
 width: 10px;
 }
+
+#close {
+
+position: relative;
+bottom: 320px;
+right:-680px;
+display:inline-block;
+padding:2px 5px;
+background:#ccc;
+}
+
+#close:hover {
+    cursor: pointer;
+    display:inline-block;
+    padding:2px 5px;
+    background:#ccc;
+    color:#fff;
+}
 </style>
-<div class='button'><button type="button" name="map_layer" id="gem_but" onclick="gem_but()" >Reset</button>
+<div class='button'><button type="button" name="map_layer" id="gem_but" onclick="gem_but()" >Reset</button></div>
+  <div class='button1'><button type="button" name="map_layer" id="gem_but" onclick="d3.select('#des').style('z-index',1)" >Description</button>
 
 </div>
 
@@ -57,14 +93,23 @@ width: 10px;
 <h4>Network</h4>
 <div><span style="background-color: #c8ddf0"></span>Reference</div>
 <div><span style="background-color: #73b3d8"></span>Model 3</div>
-<div><span style="background-color: #08306b"></span>Model 3 + Speed Pedelec</div>
+<div><span style="background-color: #08306b"></span>Speed Pedelec</div>
 
 
 </div>
  
 </div>
- 
+
+ <div id=des><p style='font-size: 23px;text-align: center;'><b>Accessibility of Bike Networks in Amsterdam</b>
+  <p style="font-size: 14px;">What are the benefits to creating new bike infrastructure in Amsterdam? This project set out to determine what the impact would be between different bike network options in the Metropolitan Region of Amsterdam. For this work we cooperated with the municipality to identify and model missing bike links in the region. In addition, we analyzed the current bike network and determined where upgrades were necessary for a more safe and efficient regional bike network.<br><br> This analysis contains three models: Reference, Model3 and Speed PedelEc. The Reference Model, is the network as it currently is with no changes. Model 3 is the current network with identified missing links added and speeds increased on regional and urban ‘bike highways’ to simulate upgrades to the network. The last model tested, Speed PedelEc (SP), is the same as Model 3, but with upgrades on specific links in the network that would allow 35 km/h travel via electric bikes.
+  <br> 
+  <br>
+  Each dot represents a starting point in the city and clicking on it reveals how far you can travel in 45 minutes via each model. Number of jobs reached are used as the variable to calculate accessibility. </p> 
+  
+  <span id='close' onclick="d3.select('#des').style('z-index',-1)">x</span>
+ </div>
 <script>
+
 
 mapboxgl.accessToken = 'pk.eyJ1IjoiZHRheWxvcmdvdWQiLCJhIjoiY2tlbzA1OHltMjJyNjMwcGM2eHZsMGowaiJ9.jtxQ1bgoZL9_sacqiAlTsg';
 var map = new mapboxgl.Map({
@@ -195,6 +240,8 @@ var margin = {top: 30, right: 30, bottom: 70, left: 60},
     width = 500 - margin.left - margin.right,
     height = 300 - margin.top - margin.bottom;
 
+  
+
 // append the svg object to the body of the page
 var svg = d3.select(container)
   .append("svg")
@@ -238,6 +285,7 @@ function updategem(selectedVar) {
   console.log(selectedVar)
   // Parse the Data
   d3.csv("pc4_jobs.csv", function(data) {
+    poo = data
     woo = data.filter(function(d){return d.id == selectedVar})
     // X axis
     gety.domain(data.map(function(d) { return d.level; }))
@@ -310,7 +358,7 @@ function updategem(selectedVar) {
         .attr('fill','black')
         .attr('font-weight',700)
         
-        .text('Banen binnen 45 min')
+        .text('Jobs within 45 min')
         gname
       .enter()
       .append("text")
@@ -358,7 +406,9 @@ function updategem(selectedVar) {
 
 
 }
-// Initialize plot
+
+
+
 
 
 </script>
